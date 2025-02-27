@@ -1,0 +1,3 @@
+[submodule "tail-tray"]
+	path = tail-tray
+	url = https://github.com/SneWs/tail-tray

@@ -1,0 +1,69 @@
+---
+name: Update git submodules
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 06 * * *"
+
+jobs:
+  update-submodules:
+    name: Update git submodules
+    runs-on: ubuntu-latest
+    environment:
+      name: "pr"
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Update git submodules to latest tag
+        id: bump-submodules
+        shell: bash
+        run: |
+          {
+            echo 'GIT_OUTPUT<<EOF'
+            git submodule foreach '
+              git fetch
+
+              current_tag=$(git describe --tag)
+              latest_tag=$(git tag --list --sort=-version:refname | grep "^v[0-9]" | head -n 1)
+
+              git checkout "tags/${latest_tag}"
+
+              test "${current_tag}" != "${latest_tag}" &&
+                echo "Bumping version from ${current_tag} to ${latest_tag}\n" || echo "\n"'
+            echo EOF
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Generate GitHub app token
+        id: github-app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Create pull request
+        id: create-pull-request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.github-app-token.outputs.token }}
+          branch: update-submodules
+          sign-commits: true
+          commit-message: "build(deps): Bump git submodules"
+          title: "build(deps): Bump git submodules"
+          body: |
+            Bump git submodules to latest tag
+
+            ${{ steps.bump-submodules.outputs.GIT_OUTPUT }}
+
+      - name: Enable pull request automerge
+        if: ${{ steps.create-pull-request.outputs.pull-request-number }}
+        run: gh pr merge --merge --auto "${{ steps.create-pull-request.outputs.pull-request-number }}"
+        env:
+          GH_TOKEN: ${{ steps.github-app-token.outputs.token }}
