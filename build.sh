@@ -7,7 +7,7 @@ set -x
 sudo apt-get update
 sudo apt-get -y install binutils curl jq
 
-git_tag="$(cd tail-tray && git describe --tags)"
+git_tag="$(cd tail-tray && git describe --tags --match "v*")"
 
 github_api_url="https://api.github.com/repos/SneWs/tail-tray/releases/tags/${git_tag}"
 
