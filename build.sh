@@ -25,16 +25,14 @@ for deb_file in "${deb_files[@]}"; do
 
     case "${pkg_filename}" in
     *debian*)
-        for release in trixie sid; do
-            mkdir "${package_path}/debian_${release}"
-            cp "${GITHUB_WORKSPACE}/${pkg_filename}" "${package_path}/debian_${release}/${pkg_filename}"
-        done
+        release="$(echo "${pkg_filename}" | grep -Eo "debian-([^0-9]+)" | cut -d '-' -f 2)"
+        mkdir "${package_path}/debian_${release}"
+        cp "${GITHUB_WORKSPACE}/${pkg_filename}" "${package_path}/debian_${release}/${pkg_filename}"
         ;;
     *ubuntu*)
-        for release in noble; do
-            mkdir "${package_path}/ubuntu_${release}"
-            cp "${GITHUB_WORKSPACE}/${pkg_filename}" "${package_path}/ubuntu_${release}/${pkg_filename}"
-        done
+        release="$(echo "${pkg_filename}" | grep -Eo "ubuntu-[0-9\.]+-([^0-9]+)" | cut -d '-' -f 3)"
+        mkdir "${package_path}/ubuntu_${release}"
+        cp "${GITHUB_WORKSPACE}/${pkg_filename}" "${package_path}/ubuntu_${release}/${pkg_filename}"
         ;;
     esac
 
